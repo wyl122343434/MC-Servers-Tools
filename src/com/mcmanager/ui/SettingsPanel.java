@@ -17,8 +17,8 @@ public class SettingsPanel extends JPanel {
     private ThemeManager tm = ThemeManager.getInstance();
 
     private JPanel sidebar;
-    private String[] sections = {"通用设置", "Java 与启动", "外观个性化", "布局模板", "备份设置", "内网穿透", "AI 设置", "关于"};
-    private String[] sectionIcons = {"⚙️", "☕", "🎨", "📐", "💾", "🌐", "🤖", "ℹ️"};
+    private String[] sections = {"通用设置", "Java 与启动", "外观个性化", "布局模板", "备份设置", "内网穿透", "AI 设置", "系统工具", "关于"};
+    private String[] sectionIcons = {"⚙️", "☕", "🎨", "📐", "💾", "🌐", "🤖", "🔧", "ℹ️"};
     private int currentSection = 0;
     private JPanel contentPanel;
 
@@ -405,9 +405,62 @@ public class SettingsPanel extends JPanel {
                 gbc.gridwidth = 1;
                 break;
             case 7:
+                // System Tools section
+                JPanel toolsPanel = new JPanel();
+                toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
+                toolsPanel.setBackground(tm.bgCard());
+                toolsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+                JLabel toolsTitle = new JLabel("🔧 系统工具");
+                toolsTitle.setFont(FontUtil.getFont(Font.BOLD, 18));
+                toolsTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+                toolsPanel.add(toolsTitle);
+                toolsPanel.add(Box.createVerticalStrut(15));
+
+                // OpenSSH setup
+                JPanel sshCard = new JPanel(new BorderLayout());
+                sshCard.setBackground(tm.bgSecondary());
+                sshCard.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(tm.border(), 1, true),
+                    BorderFactory.createEmptyBorder(15, 15, 15, 15)));
+                JLabel sshTitle = new JLabel("📡 Windows OpenSSH 一键开启");
+                sshTitle.setFont(FontUtil.getFont(Font.BOLD, 14));
+                JLabel sshDesc = new JLabel("<html>自动安装 OpenSSH 服务器、启动服务、设置开机自启、添加防火墙规则（22端口）<br>需要管理员权限，点击后会弹出 UAC 确认窗口</html>");
+                sshDesc.setForeground(tm.textSecondary());
+                sshDesc.setFont(FontUtil.getFont(Font.PLAIN, 12));
+                JButton sshBtn = new JButton("🚀 一键开启 OpenSSH");
+                sshBtn.setBackground(tm.accent());
+                sshBtn.setForeground(Color.WHITE);
+                sshBtn.setFocusPainted(false);
+                sshBtn.setFont(FontUtil.getFont(Font.BOLD, 13));
+                sshBtn.addActionListener(e -> setupOpenSSH());
+                JPanel sshBtnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+                sshBtnPanel.setBackground(tm.bgSecondary());
+                sshBtnPanel.add(sshBtn);
+                sshCard.add(sshTitle, BorderLayout.NORTH);
+                sshCard.add(sshDesc, BorderLayout.CENTER);
+                sshCard.add(sshBtnPanel, BorderLayout.SOUTH);
+                sshCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+                toolsPanel.add(sshCard);
+                toolsPanel.add(Box.createVerticalStrut(15));
+
+                // Status info
+                JLabel statusHint = new JLabel("<html><b>提示：</b>如果连接失败，请检查：<br>1. 两台电脑在同一局域网（或使用内网穿透）<br>2. 防火墙已放行 22 端口<br>3. 用户名密码正确（Windows用户名区分大小写）<br>4. SSH服务已启动（services.msc 查看 sshd）</html>");
+                statusHint.setForeground(tm.textSecondary());
+                statusHint.setFont(FontUtil.getFont(Font.PLAIN, 12));
+                statusHint.setAlignmentX(Component.LEFT_ALIGNMENT);
+                toolsPanel.add(statusHint);
+                toolsPanel.add(Box.createVerticalGlue());
+
+                JScrollPane toolsScroll = new JScrollPane(toolsPanel);
+                toolsScroll.setBorder(null);
+                toolsScroll.setBackground(tm.bgCard());
+                panel.add(toolsScroll);
+                break;
+            case 8:
                 JLabel about = new JLabel("<html><div style='font-size:13px;'>" +
                     "<b>MC-Servers-Tools</b><br><br>" +
-                    "版本: 3.8<br>" +
+                    "版本: 3.9<br>" +
                     "核心: Java Swing + SSH<br>" +
                     "支持: Windows / Linux / macOS / Android<br><br>" +
                     "<b>作者信息</b><br>" +
@@ -425,12 +478,11 @@ public class SettingsPanel extends JPanel {
                     "• 备份管理<br>" +
                     "• 自定义主题 & 背景图片<br>" +
                     "• 多语言支持<br><br>" +
-                    "<b>v3.8 更新说明</b><br>" +
-                    "• 程序图标（任务栏/标题栏/Alt+Tab）<br>" +
+                    "<b>v3.9 更新说明</b><br>" +
+                    "• 新增系统工具页面<br>" +
+                    "• 一键开启 Windows OpenSSH（安装/启动/自启/防火墙）<br>" +
                     "• 窗口标题中英文双语显示<br>" +
-                    "• ChmlFRP账号记住密码自动登录<br>" +
-                    "• 服务器列表每30秒自动保存<br>" +
-                    "• 项目重命名为 MC-Servers-Tools<br><br>" +
+                    "• SSH 连接故障排查提示<br><br>" +
                     "© 2026 MC-Servers-Tools" +
                     "</div></html>");
                 about.setForeground(tm.textPrimary());
@@ -491,6 +543,87 @@ public class SettingsPanel extends JPanel {
         if (bgCardBtn != null) { bgCardBtn.setBackground(tm.bgCard()); bgCardBtn.setForeground(getContrastColor(tm.bgCard())); }
         if (textPrimaryBtn != null) { textPrimaryBtn.setBackground(tm.textPrimary()); textPrimaryBtn.setForeground(getContrastColor(tm.textPrimary())); }
         if (accentBtn != null) { accentBtn.setBackground(tm.accent()); accentBtn.setForeground(getContrastColor(tm.accent())); }
+    }
+
+    private void setupOpenSSH() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "即将一键开启 Windows OpenSSH 服务器，包括：\n" +
+            "1. 安装 OpenSSH 服务器（如未安装）\n" +
+            "2. 启动 sshd 服务\n" +
+            "3. 设置开机自动启动\n" +
+            "4. 添加防火墙规则（放行22端口）\n\n" +
+            "需要管理员权限，点击确定后会弹出 UAC 确认窗口。\n是否继续？",
+            "一键开启 OpenSSH", JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
+        if (confirm != JOptionPane.OK_OPTION) return;
+
+        try {
+            // Generate PowerShell script
+            String script = "# MC-Servers-Tools OpenSSH Setup Script\n" +
+                "Write-Host '=== 正在配置 OpenSSH 服务器 ===' -ForegroundColor Cyan\n" +
+                "Write-Host ''\n" +
+                "# 1. Install OpenSSH Server if not installed\n" +
+                "Write-Host '[1/4] 检查 OpenSSH 服务器安装状态...' -ForegroundColor Yellow\n" +
+                "$sshInstalled = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'\n" +
+                "if ($sshInstalled.State -ne 'Installed') {\n" +
+                "    Write-Host '  正在安装 OpenSSH 服务器...' -ForegroundColor Gray\n" +
+                "    Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0\n" +
+                "    Write-Host '  安装完成！' -ForegroundColor Green\n" +
+                "} else {\n" +
+                "    Write-Host '  OpenSSH 服务器已安装' -ForegroundColor Green\n" +
+                "}\n" +
+                "Write-Host ''\n" +
+                "# 2. Start sshd service\n" +
+                "Write-Host '[2/4] 启动 sshd 服务...' -ForegroundColor Yellow\n" +
+                "Start-Service sshd\n" +
+                "Write-Host '  服务已启动' -ForegroundColor Green\n" +
+                "Write-Host ''\n" +
+                "# 3. Set automatic startup\n" +
+                "Write-Host '[3/4] 设置开机自动启动...' -ForegroundColor Yellow\n" +
+                "Set-Service -Name sshd -StartupType Automatic\n" +
+                "Write-Host '  已设置为自动启动' -ForegroundColor Green\n" +
+                "Write-Host ''\n" +
+                "# 4. Add firewall rule\n" +
+                "Write-Host '[4/4] 添加防火墙规则（22端口）...' -ForegroundColor Yellow\n" +
+                "if (-not (Get-NetFirewallRule -Name 'sshd' -ErrorAction SilentlyContinue)) {\n" +
+                "    New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null\n" +
+                "    Write-Host '  防火墙规则已添加' -ForegroundColor Green\n" +
+                "} else {\n" +
+                "    Write-Host '  防火墙规则已存在' -ForegroundColor Green\n" +
+                "}\n" +
+                "Write-Host ''\n" +
+                "Write-Host '=== 配置完成！===' -ForegroundColor Green\n" +
+                "Write-Host 'SSH 服务已启动，监听端口: 22' -ForegroundColor Cyan\n" +
+                "$ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -First 1).IPAddress\n" +
+                "Write-Host \"本机IP: $ip\" -ForegroundColor Cyan\n" +
+                "Write-Host \"连接命令: ssh 用户名@$ip\" -ForegroundColor Cyan\n" +
+                "Write-Host ''\n" +
+                "Write-Host '按任意键退出...' -ForegroundColor Gray\n" +
+                "$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')\n";
+
+            // Write script to temp file
+            File scriptFile = new File(System.getProperty("java.io.tmpdir"), "setup_openssh.ps1");
+            try (FileWriter fw = new FileWriter(scriptFile)) {
+                fw.write(script);
+            }
+
+            // Run as admin
+            String psCommand = "powershell -ExecutionPolicy Bypass -File \"" + scriptFile.getAbsolutePath() + "\"";
+            Runtime.getRuntime().exec(new String[]{"powershell", "-Command",
+                "Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -File','" + scriptFile.getAbsolutePath().replace("\\", "\\\\") + "' -Verb RunAs"});
+
+            JOptionPane.showMessageDialog(this,
+                "已弹出管理员权限窗口，请点击\"是\"继续。\n\n" +
+                "脚本会自动完成：安装→启动→开机自启→防火墙\n" +
+                "完成后窗口会显示本机IP和连接命令。",
+                "OpenSSH 配置中", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void loadSettings() {
