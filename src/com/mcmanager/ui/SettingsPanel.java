@@ -444,6 +444,52 @@ public class SettingsPanel extends JPanel {
                 toolsPanel.add(sshCard);
                 toolsPanel.add(Box.createVerticalStrut(15));
 
+                // SSH User Management card
+                JPanel userCard = new JPanel(new BorderLayout());
+                userCard.setBackground(tm.bgSecondary());
+                userCard.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(tm.border(), 1, true),
+                    BorderFactory.createEmptyBorder(15, 15, 15, 15)));
+                JLabel userTitle = new JLabel("👥 SSH 用户管理");
+                userTitle.setFont(FontUtil.getFont(Font.BOLD, 14));
+                JLabel userDesc = new JLabel("<html>创建/删除 SSH 用户，修改密码。创建后其他管理员可用该用户远程连接管理服务器。<br>需要管理员权限，仅支持 Windows。</html>");
+                userDesc.setForeground(tm.textSecondary());
+                userDesc.setFont(FontUtil.getFont(Font.PLAIN, 12));
+
+                JPanel userBtnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+                userBtnPanel.setBackground(tm.bgSecondary());
+                JButton createUserBtn = new JButton("➕ 创建用户");
+                createUserBtn.setBackground(new Color(60, 140, 80));
+                createUserBtn.setForeground(Color.WHITE);
+                createUserBtn.setFocusPainted(false);
+                createUserBtn.addActionListener(e -> createSSHUser());
+                JButton deleteUserBtn = new JButton("🗑️ 删除用户");
+                deleteUserBtn.setBackground(new Color(160, 60, 60));
+                deleteUserBtn.setForeground(Color.WHITE);
+                deleteUserBtn.setFocusPainted(false);
+                deleteUserBtn.addActionListener(e -> deleteSSHUser());
+                JButton changePassBtn = new JButton("🔑 修改密码");
+                changePassBtn.setBackground(tm.accent());
+                changePassBtn.setForeground(Color.WHITE);
+                changePassBtn.setFocusPainted(false);
+                changePassBtn.addActionListener(e -> changeSSHUserPassword());
+                JButton listUserBtn = new JButton("📋 查看用户");
+                listUserBtn.setBackground(new Color(80, 100, 140));
+                listUserBtn.setForeground(Color.WHITE);
+                listUserBtn.setFocusPainted(false);
+                listUserBtn.addActionListener(e -> listSSHUsers());
+                userBtnPanel.add(createUserBtn);
+                userBtnPanel.add(deleteUserBtn);
+                userBtnPanel.add(changePassBtn);
+                userBtnPanel.add(listUserBtn);
+
+                userCard.add(userTitle, BorderLayout.NORTH);
+                userCard.add(userDesc, BorderLayout.CENTER);
+                userCard.add(userBtnPanel, BorderLayout.SOUTH);
+                userCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+                toolsPanel.add(userCard);
+                toolsPanel.add(Box.createVerticalStrut(15));
+
                 // Status info
                 JLabel statusHint = new JLabel("<html><b>提示：</b>如果连接失败，请检查：<br>1. 两台电脑在同一局域网（或使用内网穿透）<br>2. 防火墙已放行 22 端口<br>3. 用户名密码正确（Windows用户名区分大小写）<br>4. SSH服务已启动（services.msc 查看 sshd）</html>");
                 statusHint.setForeground(tm.textSecondary());
@@ -460,7 +506,7 @@ public class SettingsPanel extends JPanel {
             case 8:
                 JLabel about = new JLabel("<html><div style='font-size:13px;'>" +
                     "<b>MC-Servers-Tools</b><br><br>" +
-                    "版本: 4.0<br>" +
+                    "版本: 4.1<br>" +
                     "核心: Java Swing + SSH<br>" +
                     "支持: Windows / Linux / macOS / Android<br><br>" +
                     "<b>作者信息</b><br>" +
@@ -478,13 +524,10 @@ public class SettingsPanel extends JPanel {
                     "• 备份管理<br>" +
                     "• 自定义主题 & 背景图片<br>" +
                     "• 多语言支持<br><br>" +
-                    "<b>v4.0 更新说明</b><br>" +
-                    "• SSH 连接改后台线程，界面不卡死<br>" +
-                    "• 连接失败详细错误弹窗+排查方法<br>" +
-                    "• 连接超时改为15秒<br>" +
-                    "• 修复状态标签位置重叠问题<br>" +
-                    "• 一键开启OpenSSH独立脚本<br>" +
-                    "• 系统工具页面+OpenSSH一键配置<br><br>" +
+                    "<b>v4.1 更新说明</b><br>" +
+                    "• SSH 用户管理（创建/删除/改密码/查看）<br>" +
+                    "• 管理员可通过工具创建SSH用户远程管理<br>" +
+                    "• 系统工具页面完善<br><br>" +
                     "© 2026 MC-Servers-Tools" +
                     "</div></html>");
                 about.setForeground(tm.textPrimary());
@@ -674,6 +717,165 @@ public class SettingsPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage() +
                 "\n\n手动配置方法：\n1. 以管理员身份打开 PowerShell\n2. 运行: Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0\n3. 运行: Start-Service sshd\n4. 运行: Set-Service -Name sshd -StartupType Automatic\n5. 运行: New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22",
                 "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void createSSHUser() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        JTextField userField = new JTextField(15);
+        JPasswordField passField = new JPasswordField(15);
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
+        panel.add(new JLabel("用户名:"));
+        panel.add(userField);
+        panel.add(new JLabel("密码:"));
+        panel.add(passField);
+        panel.add(new JLabel("<html><font color='gray'>创建后该用户可通过 SSH 远程连接此电脑</font></html>"));
+        int result = JOptionPane.showConfirmDialog(this, panel, "创建 SSH 用户", JOptionPane.OK_CANCEL_OPTION);
+        if (result != JOptionPane.OK_OPTION) return;
+        String username = userField.getText().trim();
+        String password = new String(passField.getPassword());
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "用户名和密码不能为空", "错误", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try {
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String batContent = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title 创建 SSH 用户\n" +
+                "echo 正在创建用户: " + username + "\n" +
+                "net user " + username + " " + password + " /add\n" +
+                "if %errorlevel% equ 0 (\n" +
+                "    echo 用户创建成功！\n" +
+                "    echo.\n" +
+                "    echo 该用户现在可以通过 SSH 连接:\n" +
+                "    echo   ssh " + username + "@IP地址\n" +
+                ") else (\n" +
+                "    echo 用户创建失败，可能用户名已存在\n" +
+                ")\n" +
+                "echo.\n" +
+                "pause\n";
+            File batFile = new File(tempDir, "create_ssh_user.bat");
+            try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+            JOptionPane.showMessageDialog(this,
+                "已启动创建用户脚本！\n\n" +
+                "1. 弹出 UAC 窗口点\"是\"\n" +
+                "2. 等待创建完成\n" +
+                "3. 创建成功后显示连接命令\n\n" +
+                "用户名: " + username + "\n" +
+                "连接命令: ssh " + username + "@IP地址",
+                "创建 SSH 用户", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void deleteSSHUser() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String username = JOptionPane.showInputDialog(this, "输入要删除的用户名:", "删除 SSH 用户", JOptionPane.QUESTION_MESSAGE);
+        if (username == null || username.trim().isEmpty()) return;
+        username = username.trim();
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "确定要删除用户 \"" + username + "\" 吗？\n\n该用户将无法再通过 SSH 连接此电脑。",
+            "确认删除", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        try {
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String batContent = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title 删除 SSH 用户\n" +
+                "echo 正在删除用户: " + username + "\n" +
+                "net user " + username + " /delete\n" +
+                "if %errorlevel% equ 0 (\n" +
+                "    echo 用户删除成功！\n" +
+                ") else (\n" +
+                "    echo 用户删除失败，可能用户不存在\n" +
+                ")\n" +
+                "echo.\n" +
+                "pause\n";
+            File batFile = new File(tempDir, "delete_ssh_user.bat");
+            try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void changeSSHUserPassword() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        JTextField userField = new JTextField(15);
+        JPasswordField passField = new JPasswordField(15);
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
+        panel.add(new JLabel("用户名:"));
+        panel.add(userField);
+        panel.add(new JLabel("新密码:"));
+        panel.add(passField);
+        int result = JOptionPane.showConfirmDialog(this, panel, "修改 SSH 用户密码", JOptionPane.OK_CANCEL_OPTION);
+        if (result != JOptionPane.OK_OPTION) return;
+        String username = userField.getText().trim();
+        String password = new String(passField.getPassword());
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "用户名和密码不能为空", "错误", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try {
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String batContent = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title 修改 SSH 用户密码\n" +
+                "echo 正在修改用户: " + username + " 的密码\n" +
+                "net user " + username + " " + password + "\n" +
+                "if %errorlevel% equ 0 (\n" +
+                "    echo 密码修改成功！\n" +
+                ") else (\n" +
+                "    echo 密码修改失败，可能用户不存在\n" +
+                ")\n" +
+                "echo.\n" +
+                "pause\n";
+            File batFile = new File(tempDir, "change_ssh_pass.bat");
+            try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void listSSHUsers() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        try {
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String batContent = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title SSH 用户列表\n" +
+                "echo ========================================\n" +
+                "echo   本机用户列表（可用于 SSH 登录）\n" +
+                "echo ========================================\n" +
+                "echo.\n" +
+                "net user\n" +
+                "echo.\n" +
+                "echo ========================================\n" +
+                "echo  SSH 连接命令: ssh 用户名@IP地址\n" +
+                "echo ========================================\n" +
+                "echo.\n" +
+                "pause\n";
+            File batFile = new File(tempDir, "list_ssh_users.bat");
+            try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
         }
     }
 
