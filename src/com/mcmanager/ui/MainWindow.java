@@ -43,6 +43,22 @@ public class MainWindow extends JFrame {
 
     public MainWindow() {
         super("MC-Servers-Tools");
+        // Set application icon
+        try {
+            java.net.URL iconUrl = getClass().getResource("/icons/app-icon.png");
+            if (iconUrl != null) {
+                ImageIcon icon = new ImageIcon(iconUrl);
+                setIconImage(icon.getImage());
+                java.util.List<Image> icons = new java.util.ArrayList<>();
+                int[] sizes = {16, 32, 48, 64, 128};
+                for (int s : sizes) {
+                    icons.add(icon.getImage().getScaledInstance(s, s, Image.SCALE_SMOOTH));
+                }
+                setIconImages(icons);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load app icon: " + e.getMessage());
+        }
         setSize(1200, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
