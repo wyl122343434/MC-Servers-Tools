@@ -552,7 +552,7 @@ public class SettingsPanel extends JPanel {
             case 8:
                 JLabel about = new JLabel("<html><div style='font-size:13px;'>" +
                     "<b>MC-Servers-Tools</b><br><br>" +
-                    "版本: 4.2<br>" +
+                    "版本: 4.3<br>" +
                     "核心: Java Swing + SSH<br>" +
                     "支持: Windows / Linux / macOS / Android<br><br>" +
                     "<b>作者信息</b><br>" +
@@ -570,12 +570,9 @@ public class SettingsPanel extends JPanel {
                     "• 备份管理<br>" +
                     "• 自定义主题 & 背景图片<br>" +
                     "• 多语言支持<br><br>" +
-                    "<b>v4.2 更新说明</b><br>" +
-                    "• 修复SSH远程文件无法查看的问题<br>" +
-                    "• 文件列表显示名称/大小/权限/时间<br>" +
-                    "• Windows SSH家目录自动检测<br>" +
-                    "• 文件加载失败弹窗提示<br>" +
-                    "• SSH用户管理功能优化<br><br>" +
+                    "<b>v4.3 更新说明</b><br>" +
+                    "• 维护版本，稳定性提升<br>" +
+                    "• SSH文件浏览和用户权限管理优化<br><br>" +
                     "© 2026 MC-Servers-Tools" +
                     "</div></html>");
                 about.setForeground(tm.textPrimary());
