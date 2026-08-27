@@ -84,7 +84,7 @@ public class ConfigStorage {
                 props.setProperty(prefix + "mcVersion", cfg.getMcVersion() != null ? cfg.getMcVersion() : "");
                 props.setProperty(prefix + "autoStart", String.valueOf(cfg.isAutoStart()));
             }
-            props.store(new FileOutputStream(SERVERS_FILE), "MC Server Manager - Server Configurations");
+            props.store(new FileOutputStream(SERVERS_FILE), "MC-Servers-Tools - Server Configurations");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -107,7 +107,7 @@ public class ConfigStorage {
     public static void saveSettings(Properties props) {
         ensureConfigDir();
         try {
-            props.store(new FileOutputStream(SETTINGS_FILE), "MC Server Manager - Settings");
+            props.store(new FileOutputStream(SETTINGS_FILE), "MC-Servers-Tools - Settings");
         } catch (Exception e) {
             e.printStackTrace();
         }

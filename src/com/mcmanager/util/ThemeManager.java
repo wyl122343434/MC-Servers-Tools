@@ -40,7 +40,7 @@ public class ThemeManager {
     public void save() {
         try {
             new File(THEME_FILE).getParentFile().mkdirs();
-            themeProps.store(new FileOutputStream(THEME_FILE), "MC Server Manager Theme");
+            themeProps.store(new FileOutputStream(THEME_FILE), "MC-Servers-Tools Theme");
         } catch (Exception e) {}
     }
 

@@ -406,7 +406,7 @@ public class SettingsPanel extends JPanel {
                 break;
             case 7:
                 JLabel about = new JLabel("<html><div style='font-size:13px;'>" +
-                    "<b>MC 服务器管理工具</b><br><br>" +
+                    "<b>MC-Servers-Tools</b><br><br>" +
                     "版本: 3.7<br>" +
                     "核心: Java Swing + SSH<br>" +
                     "支持: Windows / Linux / macOS / Android<br><br>" +
@@ -432,7 +432,7 @@ public class SettingsPanel extends JPanel {
                     "• 内容面板透明度支持<br>" +
                     "• 窗口默认50%透明度<br>" +
                     "• 设置保存后自动重启窗口确保生效<br><br>" +
-                    "© 2026 MC Server Manager" +
+                    "© 2026 MC-Servers-Tools" +
                     "</div></html>");
                 about.setForeground(tm.textPrimary());
                 gbc.gridx = 0; gbc.gridy = row++; gbc.gridwidth = 2;

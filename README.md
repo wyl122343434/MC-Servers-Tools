@@ -1,4 +1,4 @@
-# MC 服务器管理工具 - Java 版
+# MC-Servers-Tools
 
 纯 Java Swing 桌面应用，无需浏览器，支持 Windows / Linux / macOS / Android (Termux)。
 
@@ -101,7 +101,7 @@
 ### Windows
 双击 `start.bat` 或运行：
 ```cmd
-java -jar MCServerManager.jar
+java -jar MC-Servers-Tools.jar
 ```
 
 ### Linux / Mac
@@ -111,13 +111,13 @@ chmod +x start.sh
 ```
 或直接运行：
 ```bash
-java -jar MCServerManager.jar
+java -jar MC-Servers-Tools.jar
 ```
 
 ### Android (Termux)
 ```bash
 pkg install openjdk-17
-java -jar MCServerManager.jar
+java -jar MC-Servers-Tools.jar
 ```
 
 ## 编译方法
@@ -128,7 +128,7 @@ bash compile.sh
 
 编译输出在 `out/` 目录，打包 JAR：
 ```bash
-jar cfe MCServerManager.jar com.mcmanager.Main -C out .
+jar cfe MC-Servers-Tools.jar com.mcmanager.Main -C out .
 ```
 
 ## 配置说明

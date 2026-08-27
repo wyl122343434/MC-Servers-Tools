@@ -389,7 +389,7 @@ public class ModDownloadPanel extends JPanel {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setRequestProperty("User-Agent", "MCServerManager/1.0");
+        conn.setRequestProperty("User-Agent", "MC-Servers-Tools/1.0");
         conn.setConnectTimeout(10000);
         conn.setReadTimeout(15000);
         try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
@@ -404,7 +404,7 @@ public class ModDownloadPanel extends JPanel {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setRequestProperty("User-Agent", "MCServerManager/1.0");
+        conn.setRequestProperty("User-Agent", "MC-Servers-Tools/1.0");
         conn.setRequestProperty(header, value);
         conn.setConnectTimeout(10000);
         conn.setReadTimeout(15000);
@@ -420,7 +420,7 @@ public class ModDownloadPanel extends JPanel {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setRequestProperty("User-Agent", "MCServerManager/1.0");
+        conn.setRequestProperty("User-Agent", "MC-Servers-Tools/1.0");
         try (InputStream is = conn.getInputStream();
              FileOutputStream fos = new FileOutputStream(saveFile)) {
             byte[] buf = new byte[8192];

@@ -19,6 +19,7 @@ public class ChmlFrpPanel extends JPanel {
     private JPanel mainPanel;
     private JTextField userField;
     private JPasswordField passField;
+    private JCheckBox rememberCheck;
 
     private static final String[] NODES = {
         "沈阳-01", "沈阳-02", "北京-01", "北京-02", "上海-01", "上海-02",
@@ -31,6 +32,14 @@ public class ChmlFrpPanel extends JPanel {
         setLayout(new BorderLayout());
         initUI();
         loadTunnels();
+        // Auto-login if saved account exists
+        String[] account = loadAccount();
+        if (account != null && account[0] != null && !account[0].isEmpty()) {
+            userField.setText(account[0]);
+            passField.setText(account[1]);
+            rememberCheck.setSelected(true);
+            doLogin();
+        }
     }
 
     private void initUI() {
@@ -62,9 +71,14 @@ public class ChmlFrpPanel extends JPanel {
         gbc.gridy = 3; gbc.gridx = 0; gbc.gridwidth = 2;
         loginPanel.add(loginBtn, gbc);
 
+        rememberCheck = new JCheckBox("记住密码（自动登录）");
+        rememberCheck.setBackground(new Color(0,0,0,0));
+        gbc.gridy = 4; gbc.gridwidth = 2;
+        loginPanel.add(rememberCheck, gbc);
+
         JLabel hint = new JLabel("<html><center>没有账号？访问 chmlfrp.com 注册<br>支持账号密码登录和密钥文件登录</center></html>");
         hint.setForeground(Color.GRAY);
-        gbc.gridy = 4;
+        gbc.gridy = 5;
         loginPanel.add(hint, gbc);
 
         // Main panel (after login)
@@ -148,6 +162,12 @@ public class ChmlFrpPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "请输入用户名和密码");
             return;
         }
+        // Save account if remember is checked
+        if (rememberCheck.isSelected()) {
+            saveAccount(user, pass);
+        } else {
+            clearAccount();
+        }
         // Simulate login (in real implementation, call ChmlFRP API)
         loggedIn = true;
         currentUser = user;
@@ -160,6 +180,44 @@ public class ChmlFrpPanel extends JPanel {
         revalidate();
         repaint();
         refreshTunnelTable();
+    }
+
+    private void saveAccount(String user, String pass) {
+        try {
+            String file = System.getProperty("user.home") + File.separator + ".mcmanager" + File.separator + "chmlfrp_account.properties";
+            Properties props = new Properties();
+            props.setProperty("username", user);
+            props.setProperty("password", pass);
+            props.setProperty("remember", "true");
+            props.store(new FileOutputStream(file), "ChmlFRP Account");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String[] loadAccount() {
+        try {
+            String file = System.getProperty("user.home") + File.separator + ".mcmanager" + File.separator + "chmlfrp_account.properties";
+            File f = new File(file);
+            if (!f.exists()) return null;
+            Properties props = new Properties();
+            props.load(new FileInputStream(f));
+            if ("true".equals(props.getProperty("remember", "false"))) {
+                return new String[]{props.getProperty("username", ""), props.getProperty("password", "")};
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private void clearAccount() {
+        try {
+            String file = System.getProperty("user.home") + File.separator + ".mcmanager" + File.separator + "chmlfrp_account.properties";
+            new File(file).delete();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void doLogout() {

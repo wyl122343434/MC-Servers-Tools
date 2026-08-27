@@ -1,5 +1,5 @@
 @echo off
-title MC 服务器管理工具 - Java 版
+title MC-Servers-Tools
 
 set "APP_DIR=%~dp0"
 set "JAVA_EXE="
@@ -47,7 +47,7 @@ exit /b 1
 
 :found
 echo ========================================
-echo   MC Server Manager - Java Edition
+echo   MC-Servers-Tools - Java Edition
 echo ========================================
 echo.
 echo Using Java: %JAVA_EXE%

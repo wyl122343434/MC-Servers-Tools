@@ -1,5 +1,5 @@
 #!/bin/bash
-# MC Server Manager - Java Edition (Linux/Mac)
+# MC-Servers-Tools - Java Edition (Linux/Mac)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -10,7 +10,7 @@ if [ -x "$SCRIPT_DIR/runtime/bin/java" ]; then
 fi
 
 echo "========================================"
-echo "  MC Server Manager - Java Edition"
+echo "  MC-Servers-Tools - Java Edition"
 echo "========================================"
 echo ""
 

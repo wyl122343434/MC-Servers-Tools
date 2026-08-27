@@ -4,7 +4,7 @@ import java.io.*;
 import java.nio.file.*;
 
 public class AutoStart {
-    private static final String APP_NAME = "MCServerManager";
+    private static final String APP_NAME = "MC-Servers-Tools";
 
     public static boolean isEnabled() {
         String os = System.getProperty("os.name").toLowerCase();
@@ -41,7 +41,7 @@ public class AutoStart {
         try {
             return new File(AutoStart.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getAbsolutePath();
         } catch (Exception e) {
-            return "MCServerManager.jar";
+            return "MC-Servers-Tools.jar";
         }
     }
 
@@ -83,7 +83,7 @@ public class AutoStart {
         new File(home + "/.config/autostart").mkdirs();
         String desktop = "[Desktop Entry]\n" +
             "Type=Application\n" +
-            "Name=MC Server Manager\n" +
+            "Name=MC-Servers-Tools\n" +
             "Exec=" + getJavaPath() + " -jar " + getJarPath() + "\n" +
             "Hidden=false\n" +
             "NoDisplay=false\n" +

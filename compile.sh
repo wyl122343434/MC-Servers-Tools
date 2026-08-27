@@ -1,5 +1,5 @@
 #!/bin/bash
-# Compile script for MC Server Manager Java Edition
+# Compile script for MC-Servers-Tools Java Edition
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 JAVA_HOME="$SCRIPT_DIR/../javatools/jdk-17.0.12+7"

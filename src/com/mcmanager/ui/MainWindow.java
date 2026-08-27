@@ -42,7 +42,7 @@ public class MainWindow extends JFrame {
     private JLabel rconStatusLabel;
 
     public MainWindow() {
-        super("MC 服务器管理工具 - Java 版");
+        super("MC-Servers-Tools");
         setSize(1200, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -52,6 +52,13 @@ public class MainWindow extends JFrame {
         servers = ConfigStorage.loadServers();
         initUI();
         updateServerList();
+        // Show loaded server count in status bar
+        if (statusLabel != null) {
+            statusLabel.setText("  已加载 " + servers.size() + " 个服务器 | 配置目录: " + ConfigStorage.getConfigDir());
+        }
+
+        // Auto-save every 30 seconds as safety net
+        new javax.swing.Timer(30000, e -> saveAll()).start();
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -441,7 +448,7 @@ public class MainWindow extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(tm.bgPrimary());
 
-        JLabel title = new JLabel("📖 MC 服务器管理工具 - 使用教程");
+        JLabel title = new JLabel("📖 MC-Servers-Tools - 使用教程");
         title.setFont(FontUtil.getFont(Font.BOLD, 24));
         title.setForeground(tm.textPrimary());
         title.setBorder(BorderFactory.createEmptyBorder(20, 25, 10, 25));
@@ -1168,6 +1175,16 @@ public class MainWindow extends JFrame {
     }
 
     private void saveAll() {
-        ConfigStorage.saveServers(servers);
+        try {
+            ConfigStorage.saveServers(servers);
+            if (statusLabel != null) {
+                statusLabel.setText("  已保存 " + servers.size() + " 个服务器配置");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (statusLabel != null) {
+                statusLabel.setText("  ⚠️ 保存失败: " + e.getMessage());
+            }
+        }
     }
 }

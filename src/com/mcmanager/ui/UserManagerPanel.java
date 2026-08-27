@@ -135,7 +135,7 @@ public class UserManagerPanel extends JPanel {
             props.setProperty(p + "owner", username);
             props.setProperty("tunnel.count", String.valueOf(count + 1));
             f.getParentFile().mkdirs();
-            props.store(new FileOutputStream(f), "MC Server Manager - ChmlFRP Tunnels");
+            props.store(new FileOutputStream(f), "MC-Servers-Tools - ChmlFRP Tunnels");
 
             String publicAddr = node.replace("-01", "").toLowerCase() + ".chmlfrp.cn:" + remotePort;
             JOptionPane.showMessageDialog(this,
@@ -279,7 +279,7 @@ public class UserManagerPanel extends JPanel {
                 props.setProperty(p + "status", u.get("status"));
                 props.setProperty(p + "created", u.get("created"));
             }
-            props.store(new FileOutputStream(USERS_FILE), "MC Server Manager - Users");
+            props.store(new FileOutputStream(USERS_FILE), "MC-Servers-Tools - Users");
         } catch (Exception e) { e.printStackTrace(); }
     }
 }

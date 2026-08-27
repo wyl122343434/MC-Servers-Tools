@@ -1,0 +1,6 @@
+;!@Install@!UTF-8!
+Title="MC Server Manager - Java Edition"
+BeginPrompt="This will extract MC Server Manager to your computer. Continue?"
+InstallPath="%SystemDrive%\MCServerManager"
+RunProgram="start.bat"
+;!@InstallEnd@!

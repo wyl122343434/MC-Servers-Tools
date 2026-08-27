@@ -1,0 +1,6 @@
+;!@Install@!UTF-8!
+Title="MC Server Manager v3.1"
+BeginPrompt="Install MC Server Manager v3.1?"
+Directory=".\MCServerManager-Setup"
+Execute="explorer.exe .\MCServerManager-Setup"
+;!@InstallEnd@!

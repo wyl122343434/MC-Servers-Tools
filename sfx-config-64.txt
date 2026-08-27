@@ -1,0 +1,6 @@
+;!@Install@!UTF-8!
+Title="MC服务器管理工具 v3.1 安装"
+BeginPrompt="点击确定将解压安装文件到当前文件夹，解压完成后请双击 install.bat 进行安装"
+Directory=".\MCServerManager-Setup"
+Execute="explorer.exe .\MCServerManager-Setup"
+;!@InstallEnd@!
