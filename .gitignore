@@ -1,0 +1,48 @@
+# Build output
+out/
+jar-tmp/
+dist/
+dist-lite/
+exe-build/
+exe-package/
+exe3-split/
+exe64-split/
+exe-setup-split/
+installer/
+installer-lite/
+setup-split/
+split-10m/
+split-parts/
+
+# Binary packages
+*.exe
+*.zip
+*.7z
+*.rar
+*.tar.gz
+MCServerManager.jar
+
+# Temp files
+*.tmp
+*.log
+*.class
+*.bak
+ziy0BYac
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Config with secrets (if any)
+*.key
+*.pem
+id_rsa
+id_rsa.pub

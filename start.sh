@@ -1,0 +1,17 @@
+#!/bin/bash
+# MC Server Manager - Java Edition (Linux/Mac)
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Find Java
+JAVA_EXE="java"
+if [ -x "$SCRIPT_DIR/runtime/bin/java" ]; then
+    JAVA_EXE="$SCRIPT_DIR/runtime/bin/java"
+fi
+
+echo "========================================"
+echo "  MC Server Manager - Java Edition"
+echo "========================================"
+echo ""
+
+"$JAVA_EXE" -cp "$SCRIPT_DIR/lib/*:$SCRIPT_DIR/out" com.mcmanager.Main
