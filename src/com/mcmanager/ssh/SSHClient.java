@@ -67,15 +67,33 @@ public class SSHClient {
         ChannelSftp sftp = (ChannelSftp) session.openChannel("sftp");
         sftp.connect();
         List<String> files = new ArrayList<>();
-        Vector<?> entries = sftp.ls(path);
-        for (Object entry : entries) {
-            ChannelSftp.LsEntry e = (ChannelSftp.LsEntry) entry;
-            if (!e.getFilename().equals(".") && !e.getFilename().equals("..")) {
-                files.add(e.getFilename() + (e.getAttrs().isDir() ? "/" : ""));
+        try {
+            Vector<?> entries = sftp.ls(path);
+            for (Object entry : entries) {
+                ChannelSftp.LsEntry e = (ChannelSftp.LsEntry) entry;
+                if (!e.getFilename().equals(".") && !e.getFilename().equals("..")) {
+                    String name = e.getFilename();
+                    boolean isDir = e.getAttrs().isDir();
+                    long size = e.getAttrs().getSize();
+                    String sizeStr = isDir ? "<DIR>" : formatSize(size);
+                    String perms = e.getAttrs().getPermissionsString();
+                    long mtime = e.getAttrs().getMTime() * 1000L;
+                    String timeStr = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date(mtime));
+                    // Format: name|size|perms|time|isDir
+                    files.add(name + "|" + sizeStr + "|" + perms + "|" + timeStr + "|" + (isDir ? "dir" : "file"));
+                }
             }
+        } finally {
+            sftp.disconnect();
         }
-        sftp.disconnect();
         return files;
+    }
+
+    private String formatSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
     }
     
     public String readFile(String path) throws JSchException, IOException, SftpException {

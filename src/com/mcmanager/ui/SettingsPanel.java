@@ -490,6 +490,52 @@ public class SettingsPanel extends JPanel {
                 toolsPanel.add(userCard);
                 toolsPanel.add(Box.createVerticalStrut(15));
 
+                // SSH User Permission Management card
+                JPanel permCard = new JPanel(new BorderLayout());
+                permCard.setBackground(tm.bgSecondary());
+                permCard.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(tm.border(), 1, true),
+                    BorderFactory.createEmptyBorder(15, 15, 15, 15)));
+                JLabel permTitle = new JLabel("🔐 SSH 用户权限与文件访问管理");
+                permTitle.setFont(FontUtil.getFont(Font.BOLD, 14));
+                JLabel permDesc = new JLabel("<html>管理SSH用户的目录访问权限、禁用/启用用户、设置文件读写权限。<br>需要管理员权限，仅支持 Windows。</html>");
+                permDesc.setForeground(tm.textSecondary());
+                permDesc.setFont(FontUtil.getFont(Font.PLAIN, 12));
+
+                JPanel permBtnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+                permBtnPanel.setBackground(tm.bgSecondary());
+                JButton viewPermBtn = new JButton("📋 查看用户权限");
+                viewPermBtn.setBackground(new Color(80, 100, 140));
+                viewPermBtn.setForeground(Color.WHITE);
+                viewPermBtn.setFocusPainted(false);
+                viewPermBtn.addActionListener(e -> viewUserPermissions());
+                JButton disableUserBtn = new JButton("🚫 禁用用户");
+                disableUserBtn.setBackground(new Color(160, 80, 60));
+                disableUserBtn.setForeground(Color.WHITE);
+                disableUserBtn.setFocusPainted(false);
+                disableUserBtn.addActionListener(e -> disableSSHUser());
+                JButton enableUserBtn = new JButton("✅ 启用用户");
+                enableUserBtn.setBackground(new Color(60, 140, 80));
+                enableUserBtn.setForeground(Color.WHITE);
+                enableUserBtn.setFocusPainted(false);
+                enableUserBtn.addActionListener(e -> enableSSHUser());
+                JButton setDirPermBtn = new JButton("📁 设置目录权限");
+                setDirPermBtn.setBackground(tm.accent());
+                setDirPermBtn.setForeground(Color.WHITE);
+                setDirPermBtn.setFocusPainted(false);
+                setDirPermBtn.addActionListener(e -> setDirectoryPermissions());
+                permBtnPanel.add(viewPermBtn);
+                permBtnPanel.add(disableUserBtn);
+                permBtnPanel.add(enableUserBtn);
+                permBtnPanel.add(setDirPermBtn);
+
+                permCard.add(permTitle, BorderLayout.NORTH);
+                permCard.add(permDesc, BorderLayout.CENTER);
+                permCard.add(permBtnPanel, BorderLayout.SOUTH);
+                permCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+                toolsPanel.add(permCard);
+                toolsPanel.add(Box.createVerticalStrut(15));
+
                 // Status info
                 JLabel statusHint = new JLabel("<html><b>提示：</b>如果连接失败，请检查：<br>1. 两台电脑在同一局域网（或使用内网穿透）<br>2. 防火墙已放行 22 端口<br>3. 用户名密码正确（Windows用户名区分大小写）<br>4. SSH服务已启动（services.msc 查看 sshd）</html>");
                 statusHint.setForeground(tm.textSecondary());
@@ -525,9 +571,11 @@ public class SettingsPanel extends JPanel {
                     "• 自定义主题 & 背景图片<br>" +
                     "• 多语言支持<br><br>" +
                     "<b>v4.2 更新说明</b><br>" +
-                    "• 维护版本，稳定性提升<br>" +
-                    "• SSH 用户管理功能优化<br>" +
-                    "• 系统工具页面完善<br><br>" +
+                    "• 修复SSH远程文件无法查看的问题<br>" +
+                    "• 文件列表显示名称/大小/权限/时间<br>" +
+                    "• Windows SSH家目录自动检测<br>" +
+                    "• 文件加载失败弹窗提示<br>" +
+                    "• SSH用户管理功能优化<br><br>" +
                     "© 2026 MC-Servers-Tools" +
                     "</div></html>");
                 about.setForeground(tm.textPrimary());
@@ -874,6 +922,180 @@ public class SettingsPanel extends JPanel {
             File batFile = new File(tempDir, "list_ssh_users.bat");
             try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
             Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void viewUserPermissions() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String username = JOptionPane.showInputDialog(this, "输入要查看权限的用户名:", "查看用户权限", JOptionPane.QUESTION_MESSAGE);
+        if (username == null || username.trim().isEmpty()) return;
+        username = username.trim();
+        try {
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String batContent = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title 用户权限查看 - " + username + "\n" +
+                "echo ========================================\n" +
+                "echo   用户信息: " + username + "\n" +
+                "echo ========================================\n" +
+                "net user " + username + "\n" +
+                "echo.\n" +
+                "echo ========================================\n" +
+                "echo   用户所属组\n" +
+                "echo ========================================\n" +
+                "net localgroup | findstr /i \"" + username + "\"\n" +
+                "echo.\n" +
+                "echo ========================================\n" +
+                "echo   SSH 配置文件位置\n" +
+                "echo ========================================\n" +
+                "echo C:\\ProgramData\\ssh\\sshd_config\n" +
+                "echo.\n" +
+                "pause\n";
+            File batFile = new File(tempDir, "view_user_perm.bat");
+            try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void disableSSHUser() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String username = JOptionPane.showInputDialog(this, "输入要禁用的用户名:", "禁用SSH用户", JOptionPane.QUESTION_MESSAGE);
+        if (username == null || username.trim().isEmpty()) return;
+        username = username.trim();
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "确定要禁用用户 \"" + username + "\" 吗？\n\n禁用后该用户将无法通过 SSH 登录。",
+            "确认禁用", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        try {
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String batContent = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title 禁用SSH用户\n" +
+                "echo 正在禁用用户: " + username + "\n" +
+                "net user " + username + " /active:no\n" +
+                "if %errorlevel% equ 0 (\n" +
+                "    echo 用户禁用成功！\n" +
+                "    echo 该用户现在无法通过 SSH 登录\n" +
+                ") else (\n" +
+                "    echo 用户禁用失败，可能用户不存在\n" +
+                ")\n" +
+                "echo.\n" +
+                "pause\n";
+            File batFile = new File(tempDir, "disable_ssh_user.bat");
+            try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void enableSSHUser() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String username = JOptionPane.showInputDialog(this, "输入要启用的用户名:", "启用SSH用户", JOptionPane.QUESTION_MESSAGE);
+        if (username == null || username.trim().isEmpty()) return;
+        username = username.trim();
+        try {
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String batContent = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title 启用SSH用户\n" +
+                "echo 正在启用用户: " + username + "\n" +
+                "net user " + username + " /active:yes\n" +
+                "if %errorlevel% equ 0 (\n" +
+                "    echo 用户启用成功！\n" +
+                "    echo 该用户现在可以通过 SSH 登录\n" +
+                ") else (\n" +
+                "    echo 用户启用失败，可能用户不存在\n" +
+                ")\n" +
+                "echo.\n" +
+                "pause\n";
+            File batFile = new File(tempDir, "enable_ssh_user.bat");
+            try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void setDirectoryPermissions() {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            JOptionPane.showMessageDialog(this, "此功能仅支持 Windows 系统", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        JTextField userField = new JTextField(15);
+        JTextField dirField = new JTextField(20);
+        String[] permOptions = {"只读 (R)", "读写 (RW)", "完全控制 (F)", "拒绝访问 (DENY)"};
+        JComboBox<String> permCombo = new JComboBox<>(permOptions);
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
+        panel.add(new JLabel("用户名:"));
+        panel.add(userField);
+        panel.add(new JLabel("目录路径 (如 C:\\MCServers):"));
+        panel.add(dirField);
+        panel.add(new JLabel("权限:"));
+        panel.add(permCombo);
+        panel.add(new JLabel("<html><font color='gray'>设置后该用户对指定目录的访问权限将被限制</font></html>"));
+        int result = JOptionPane.showConfirmDialog(this, panel, "设置目录权限", JOptionPane.OK_CANCEL_OPTION);
+        if (result != JOptionPane.OK_OPTION) return;
+        String username = userField.getText().trim();
+        String dirPath = dirField.getText().trim();
+        String perm = (String) permCombo.getSelectedItem();
+        if (username.isEmpty() || dirPath.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "用户名和目录路径不能为空", "错误", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        String permCode = "R";
+        if (perm.contains("读写")) permCode = "RW";
+        else if (perm.contains("完全")) permCode = "F";
+        else if (perm.contains("拒绝")) permCode = "DENY";
+        try {
+            String tempDir = System.getProperty("java.io.tmpdir");
+            String icaclsCmd;
+            if ("DENY".equals(permCode)) {
+                icaclsCmd = "icacls \"" + dirPath + "\" /deny " + username + ":(OI)(CI)F";
+            } else {
+                icaclsCmd = "icacls \"" + dirPath + "\" /grant " + username + ":(OI)(CI)" + permCode;
+            }
+            String batContent = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title 设置目录权限\n" +
+                "echo 用户: " + username + "\n" +
+                "echo 目录: " + dirPath + "\n" +
+                "echo 权限: " + perm + "\n" +
+                "echo.\n" +
+                "echo 正在设置权限...\n" +
+                icaclsCmd + "\n" +
+                "if %errorlevel% equ 0 (\n" +
+                "    echo.\n" +
+                "    echo 权限设置成功！\n" +
+                ") else (\n" +
+                "    echo.\n" +
+                "    echo 权限设置失败，请检查路径和用户名\n" +
+                ")\n" +
+                "echo.\n" +
+                "pause\n";
+            File batFile = new File(tempDir, "set_dir_perm.bat");
+            try (FileWriter fw = new FileWriter(batFile)) { fw.write(batContent); }
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
+            JOptionPane.showMessageDialog(this,
+                "已启动权限设置脚本！\n\n" +
+                "用户: " + username + "\n" +
+                "目录: " + dirPath + "\n" +
+                "权限: " + perm + "\n\n" +
+                "弹出 UAC 窗口点\"是\"，等待设置完成。",
+                "设置目录权限", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
         }

@@ -366,17 +366,31 @@ public class RemoteConnectPanel extends JPanel {
         revalidate();
         repaint();
 
-        // Detect home dir
+        // Detect home dir (support both Linux and Windows)
         try {
             String home = ssh.execCommand("echo $HOME").trim();
+            if (home.isEmpty() || home.equals("$HOME") || home.contains("Windows")) {
+                home = ssh.execCommand("echo %USERPROFILE%").trim();
+                if (home.isEmpty() || home.equals("%USERPROFILE%")) {
+                    home = "/";
+                } else {
+                    home = home.replace("\\", "/");
+                    if (home.matches("^[A-Za-z]:/.*")) {
+                        home = "/" + home.charAt(0) + home.substring(2);
+                    }
+                }
+            }
             if (!home.isEmpty()) {
                 currentRemoteDir = home;
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            currentRemoteDir = "/";
+        }
         pathLabel.setText(currentRemoteDir);
         loadRemoteFiles();
         appendConsole("[系统] 已连接到 " + user + "@" + host);
         appendConsole("[系统] 当前目录: " + currentRemoteDir);
+        appendConsole("[提示] 双击文件夹进入，双击文件编辑，点击刷新按钮刷新文件列表");
     }
 
     private void sendRemoteCommand() {
@@ -394,6 +408,10 @@ public class RemoteConnectPanel extends JPanel {
 
     private void loadRemoteFiles() {
         try {
+            if (ssh == null || !ssh.isConnected()) {
+                appendConsole("[错误] SSH 未连接");
+                return;
+            }
             List<String> files = ssh.listFiles(currentRemoteDir);
             fileModel.setRowCount(0);
             fileModel.addRow(new Object[]{"..", "<DIR>", "", ""});
@@ -406,12 +424,36 @@ public class RemoteConnectPanel extends JPanel {
                 }
             }
             pathLabel.setText(currentRemoteDir);
+            appendConsole("[系统] 已加载 " + files.size() + " 个文件/文件夹");
         } catch (Exception ex) {
-            appendConsole("[错误] 无法列出文件: " + ex.getMessage());
+            String errorMsg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            appendConsole("[错误] 无法列出文件: " + errorMsg);
+            appendConsole("[错误] 目录: " + currentRemoteDir);
+            appendConsole("[提示] 请检查目录路径是否正确，或点击上级目录返回");
+            // Show error dialog
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(this,
+                    "无法查看远程文件！\n\n" +
+                    "错误信息: " + errorMsg + "\n" +
+                    "当前目录: " + currentRemoteDir + "\n\n" +
+                    "可能的原因:\n" +
+                    "1. 目录路径不正确\n" +
+                    "2. 权限不足\n" +
+                    "3. SFTP 服务未启动\n\n" +
+                    "解决方法:\n" +
+                    "- 点击\"上级目录\"返回\n" +
+                    "- 在控制台执行: ls / 查看根目录\n" +
+                    "- 确认 SSH 用户有读取权限",
+                    "文件加载失败", JOptionPane.ERROR_MESSAGE);
+            });
         }
     }
 
     private void navigateRemoteDir(String name) {
+        // Extract just the filename (in case it contains | separators)
+        if (name.contains("|")) {
+            name = name.split("\\|")[0];
+        }
         if ("..".equals(name)) {
             int idx = currentRemoteDir.lastIndexOf('/');
             if (idx > 0) currentRemoteDir = currentRemoteDir.substring(0, idx);
@@ -425,7 +467,12 @@ public class RemoteConnectPanel extends JPanel {
 
     private void editRemoteFile(String name) {
         try {
-            String path = currentRemoteDir + "/" + name;
+            // Extract just the filename (in case it contains | separators)
+            if (name.contains("|")) {
+                name = name.split("\\|")[0];
+            }
+            // Build path correctly, avoid double slashes
+            String path = currentRemoteDir.endsWith("/") ? currentRemoteDir + name : currentRemoteDir + "/" + name;
             TextEditorDialog.RemoteFileHandler handler = new TextEditorDialog.RemoteFileHandler() {
                 public String readFile(String p) throws Exception { return ssh.readFile(p); }
                 public void writeFile(String p, String content) throws Exception { ssh.writeFile(p, content); }
@@ -435,8 +482,12 @@ public class RemoteConnectPanel extends JPanel {
             TextEditorDialog editor = new TextEditorDialog(frame, path, true, handler);
             editor.setVisible(true);
             appendConsole("[文件] 已打开编辑: " + name);
+            appendConsole("[文件] 编辑完成后点击\"保存\"按钮，或按 Ctrl+S 保存");
+            // Refresh file list after editor closes
+            loadRemoteFiles();
         } catch (Exception ex) {
             appendConsole("[错误] 无法编辑文件: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "无法编辑文件: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
         }
     }
 
