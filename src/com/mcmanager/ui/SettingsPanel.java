@@ -407,7 +407,7 @@ public class SettingsPanel extends JPanel {
             case 7:
                 JLabel about = new JLabel("<html><div style='font-size:13px;'>" +
                     "<b>MC-Servers-Tools</b><br><br>" +
-                    "版本: 3.7<br>" +
+                    "版本: 3.8<br>" +
                     "核心: Java Swing + SSH<br>" +
                     "支持: Windows / Linux / macOS / Android<br><br>" +
                     "<b>作者信息</b><br>" +
@@ -425,13 +425,12 @@ public class SettingsPanel extends JPanel {
                     "• 备份管理<br>" +
                     "• 自定义主题 & 背景图片<br>" +
                     "• 多语言支持<br><br>" +
-                    "<b>v3.7 更新说明</b><br>" +
-                    "• 文件管理显示文件图标和类型<br>" +
-                    "• 模组下载支持 Modrinth/CurseForge/MC百科<br>" +
-                    "• CurseForge API Key 在设置中配置<br>" +
-                    "• 内容面板透明度支持<br>" +
-                    "• 窗口默认50%透明度<br>" +
-                    "• 设置保存后自动重启窗口确保生效<br><br>" +
+                    "<b>v3.8 更新说明</b><br>" +
+                    "• 程序图标（任务栏/标题栏/Alt+Tab）<br>" +
+                    "• 窗口标题中英文双语显示<br>" +
+                    "• ChmlFRP账号记住密码自动登录<br>" +
+                    "• 服务器列表每30秒自动保存<br>" +
+                    "• 项目重命名为 MC-Servers-Tools<br><br>" +
                     "© 2026 MC-Servers-Tools" +
                     "</div></html>");
                 about.setForeground(tm.textPrimary());

@@ -42,7 +42,7 @@ public class MainWindow extends JFrame {
     private JLabel rconStatusLabel;
 
     public MainWindow() {
-        super("MC-Servers-Tools");
+        super("MC-Servers-Tools - MC服务器管理工具");
         // Set application icon
         try {
             java.net.URL iconUrl = getClass().getResource("/icons/app-icon.png");
