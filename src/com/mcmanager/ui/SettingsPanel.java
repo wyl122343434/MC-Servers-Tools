@@ -506,7 +506,7 @@ public class SettingsPanel extends JPanel {
             case 8:
                 JLabel about = new JLabel("<html><div style='font-size:13px;'>" +
                     "<b>MC-Servers-Tools</b><br><br>" +
-                    "版本: 4.1<br>" +
+                    "版本: 4.2<br>" +
                     "核心: Java Swing + SSH<br>" +
                     "支持: Windows / Linux / macOS / Android<br><br>" +
                     "<b>作者信息</b><br>" +
@@ -524,9 +524,9 @@ public class SettingsPanel extends JPanel {
                     "• 备份管理<br>" +
                     "• 自定义主题 & 背景图片<br>" +
                     "• 多语言支持<br><br>" +
-                    "<b>v4.1 更新说明</b><br>" +
-                    "• SSH 用户管理（创建/删除/改密码/查看）<br>" +
-                    "• 管理员可通过工具创建SSH用户远程管理<br>" +
+                    "<b>v4.2 更新说明</b><br>" +
+                    "• 维护版本，稳定性提升<br>" +
+                    "• SSH 用户管理功能优化<br>" +
                     "• 系统工具页面完善<br><br>" +
                     "© 2026 MC-Servers-Tools" +
                     "</div></html>");
