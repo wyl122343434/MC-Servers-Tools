@@ -561,68 +561,117 @@ public class SettingsPanel extends JPanel {
         if (confirm != JOptionPane.OK_OPTION) return;
 
         try {
-            // Generate PowerShell script
-            String script = "# MC-Servers-Tools OpenSSH Setup Script\n" +
-                "Write-Host '=== 正在配置 OpenSSH 服务器 ===' -ForegroundColor Cyan\n" +
+            String tempDir = System.getProperty("java.io.tmpdir");
+
+            // Generate PowerShell script with error handling
+            String psScript = "# MC-Servers-Tools OpenSSH Setup Script\n" +
+                "$ErrorActionPreference = 'Continue'\n" +
                 "Write-Host ''\n" +
-                "# 1. Install OpenSSH Server if not installed\n" +
-                "Write-Host '[1/4] 检查 OpenSSH 服务器安装状态...' -ForegroundColor Yellow\n" +
-                "$sshInstalled = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'\n" +
-                "if ($sshInstalled.State -ne 'Installed') {\n" +
-                "    Write-Host '  正在安装 OpenSSH 服务器...' -ForegroundColor Gray\n" +
-                "    Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0\n" +
-                "    Write-Host '  安装完成！' -ForegroundColor Green\n" +
-                "} else {\n" +
-                "    Write-Host '  OpenSSH 服务器已安装' -ForegroundColor Green\n" +
+                "Write-Host '========================================' -ForegroundColor Cyan\n" +
+                "Write-Host '  MC-Servers-Tools - OpenSSH 一键配置' -ForegroundColor Cyan\n" +
+                "Write-Host '========================================' -ForegroundColor Cyan\n" +
+                "Write-Host ''\n" +
+                "try {\n" +
+                "    # 1. Install OpenSSH Server\n" +
+                "    Write-Host '[1/4] 检查 OpenSSH 服务器安装状态...' -ForegroundColor Yellow\n" +
+                "    $sshInstalled = Get-WindowsCapability -Online | Where-Object { $_.Name -like 'OpenSSH.Server*' }\n" +
+                "    if ($sshInstalled.State -ne 'Installed') {\n" +
+                "        Write-Host '  正在安装 OpenSSH 服务器（可能需要几分钟）...' -ForegroundColor Gray\n" +
+                "        Add-WindowsCapability -Online -Name 'OpenSSH.Server~~~~0.0.1.0' | Out-Null\n" +
+                "        Write-Host '  安装完成！' -ForegroundColor Green\n" +
+                "    } else {\n" +
+                "        Write-Host '  OpenSSH 服务器已安装' -ForegroundColor Green\n" +
+                "    }\n" +
+                "    Write-Host ''\n" +
+                "    # 2. Start sshd service\n" +
+                "    Write-Host '[2/4] 启动 sshd 服务...' -ForegroundColor Yellow\n" +
+                "    Start-Service sshd -ErrorAction Stop\n" +
+                "    Write-Host '  服务已启动' -ForegroundColor Green\n" +
+                "    Write-Host ''\n" +
+                "    # 3. Set automatic startup\n" +
+                "    Write-Host '[3/4] 设置开机自动启动...' -ForegroundColor Yellow\n" +
+                "    Set-Service -Name sshd -StartupType Automatic\n" +
+                "    Write-Host '  已设置为自动启动' -ForegroundColor Green\n" +
+                "    Write-Host ''\n" +
+                "    # 4. Add firewall rule\n" +
+                "    Write-Host '[4/4] 添加防火墙规则（22端口）...' -ForegroundColor Yellow\n" +
+                "    $existingRule = Get-NetFirewallRule -Name 'sshd' -ErrorAction SilentlyContinue\n" +
+                "    if (-not $existingRule) {\n" +
+                "        New-NetFirewallRule -Name 'sshd' -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null\n" +
+                "        Write-Host '  防火墙规则已添加' -ForegroundColor Green\n" +
+                "    } else {\n" +
+                "        Write-Host '  防火墙规则已存在' -ForegroundColor Green\n" +
+                "    }\n" +
+                "    Write-Host ''\n" +
+                "    Write-Host '========================================' -ForegroundColor Green\n" +
+                "    Write-Host '  配置完成！' -ForegroundColor Green\n" +
+                "    Write-Host '========================================' -ForegroundColor Green\n" +
+                "    Write-Host ''\n" +
+                "    $serviceStatus = (Get-Service sshd).Status\n" +
+                "    Write-Host \"SSH 服务状态: $serviceStatus\" -ForegroundColor Cyan\n" +
+                "    Write-Host '监听端口: 22' -ForegroundColor Cyan\n" +
+                "    $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' -and $_.PrefixOrigin -eq 'Dhcp' -or $_.PrefixOrigin -eq 'Manual' } | Select-Object -First 1).IPAddress\n" +
+                "    if (-not $ip) { $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -First 1).IPAddress }\n" +
+                "    Write-Host \"本机IP: $ip\" -ForegroundColor Cyan\n" +
+                "    Write-Host \"连接命令: ssh 用户名@$ip\" -ForegroundColor Cyan\n" +
+                "    Write-Host ''\n" +
+                "} catch {\n" +
+                "    Write-Host ''\n" +
+                "    Write-Host '========================================' -ForegroundColor Red\n" +
+                "    Write-Host '  配置过程中出现错误' -ForegroundColor Red\n" +
+                "    Write-Host '========================================' -ForegroundColor Red\n" +
+                "    Write-Host ''\n" +
+                "    Write-Host \"错误信息: $($_.Exception.Message)\" -ForegroundColor Red\n" +
+                "    Write-Host ''\n" +
+                "    Write-Host '可能的原因:' -ForegroundColor Yellow\n" +
+                "    Write-Host '  1. 未以管理员身份运行' -ForegroundColor Gray\n" +
+                "    Write-Host '  2. Windows 版本不支持 OpenSSH 服务器（家庭版）' -ForegroundColor Gray\n" +
+                "    Write-Host '  3. 网络问题导致安装失败' -ForegroundColor Gray\n" +
+                "    Write-Host ''\n" +
                 "}\n" +
-                "Write-Host ''\n" +
-                "# 2. Start sshd service\n" +
-                "Write-Host '[2/4] 启动 sshd 服务...' -ForegroundColor Yellow\n" +
-                "Start-Service sshd\n" +
-                "Write-Host '  服务已启动' -ForegroundColor Green\n" +
-                "Write-Host ''\n" +
-                "# 3. Set automatic startup\n" +
-                "Write-Host '[3/4] 设置开机自动启动...' -ForegroundColor Yellow\n" +
-                "Set-Service -Name sshd -StartupType Automatic\n" +
-                "Write-Host '  已设置为自动启动' -ForegroundColor Green\n" +
-                "Write-Host ''\n" +
-                "# 4. Add firewall rule\n" +
-                "Write-Host '[4/4] 添加防火墙规则（22端口）...' -ForegroundColor Yellow\n" +
-                "if (-not (Get-NetFirewallRule -Name 'sshd' -ErrorAction SilentlyContinue)) {\n" +
-                "    New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null\n" +
-                "    Write-Host '  防火墙规则已添加' -ForegroundColor Green\n" +
-                "} else {\n" +
-                "    Write-Host '  防火墙规则已存在' -ForegroundColor Green\n" +
-                "}\n" +
-                "Write-Host ''\n" +
-                "Write-Host '=== 配置完成！===' -ForegroundColor Green\n" +
-                "Write-Host 'SSH 服务已启动，监听端口: 22' -ForegroundColor Cyan\n" +
-                "$ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -First 1).IPAddress\n" +
-                "Write-Host \"本机IP: $ip\" -ForegroundColor Cyan\n" +
-                "Write-Host \"连接命令: ssh 用户名@$ip\" -ForegroundColor Cyan\n" +
-                "Write-Host ''\n" +
-                "Write-Host '按任意键退出...' -ForegroundColor Gray\n" +
+                "Write-Host '按任意键关闭窗口...' -ForegroundColor Gray\n" +
                 "$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')\n";
 
-            // Write script to temp file
-            File scriptFile = new File(System.getProperty("java.io.tmpdir"), "setup_openssh.ps1");
-            try (FileWriter fw = new FileWriter(scriptFile)) {
-                fw.write(script);
+            File psFile = new File(tempDir, "mcservers_tools_openssh_setup.ps1");
+            try (FileWriter fw = new FileWriter(psFile)) {
+                fw.write(psScript);
             }
 
-            // Run as admin
-            String psCommand = "powershell -ExecutionPolicy Bypass -File \"" + scriptFile.getAbsolutePath() + "\"";
-            Runtime.getRuntime().exec(new String[]{"powershell", "-Command",
-                "Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -File','" + scriptFile.getAbsolutePath().replace("\\", "\\\\") + "' -Verb RunAs"});
+            // Generate self-elevating batch file
+            String batScript = "@echo off\n" +
+                "chcp 65001 >nul\n" +
+                "title MC-Servers-Tools - OpenSSH 一键配置\n" +
+                ":: Check admin privileges\n" +
+                "net session >nul 2>&1\n" +
+                "if %errorLevel% neq 0 (\n" +
+                "    echo 正在请求管理员权限...\n" +
+                "    powershell -Command \"Start-Process cmd -ArgumentList '/c','\"%~f0\"' -Verb RunAs\"\n" +
+                "    exit /b\n" +
+                ")\n" +
+                ":: Run PowerShell script\n" +
+                "powershell -NoExit -ExecutionPolicy Bypass -File \"" + psFile.getAbsolutePath().replace("\\", "\\\\") + "\"\n";
+
+            File batFile = new File(tempDir, "mcservers_tools_openssh_setup.bat");
+            try (FileWriter fw = new FileWriter(batFile)) {
+                fw.write(batScript);
+            }
+
+            // Run the batch file
+            Runtime.getRuntime().exec("cmd /c \"" + batFile.getAbsolutePath() + "\"");
 
             JOptionPane.showMessageDialog(this,
-                "已弹出管理员权限窗口，请点击\"是\"继续。\n\n" +
-                "脚本会自动完成：安装→启动→开机自启→防火墙\n" +
-                "完成后窗口会显示本机IP和连接命令。",
-                "OpenSSH 配置中", JOptionPane.INFORMATION_MESSAGE);
+                "已启动 OpenSSH 配置工具！\n\n" +
+                "1. 会弹出 UAC 窗口，请点击\"是\"\n" +
+                "2. 然后会打开 PowerShell 窗口自动配置\n" +
+                "3. 配置完成后显示本机IP和连接命令\n" +
+                "4. 按任意键关闭窗口\n\n" +
+                "如果窗口闪退，请手动以管理员身份运行：\n" + batFile.getAbsolutePath(),
+                "OpenSSH 配置已启动", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "启动失败: " + e.getMessage() +
+                "\n\n手动配置方法：\n1. 以管理员身份打开 PowerShell\n2. 运行: Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0\n3. 运行: Start-Service sshd\n4. 运行: Set-Service -Name sshd -StartupType Automatic\n5. 运行: New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22",
+                "错误", JOptionPane.ERROR_MESSAGE);
         }
     }
 
