@@ -33,7 +33,8 @@ public class SSHClient {
         }
         session.setConfig("StrictHostKeyChecking", "no");
         session.setConfig("PreferredAuthentications", "publickey,password");
-        session.connect(30000);
+        session.setConfig("ConnectTimeout", "15000");
+        session.connect(15000);
     }
     
     public void disconnect() {

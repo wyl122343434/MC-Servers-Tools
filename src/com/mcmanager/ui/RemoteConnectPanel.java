@@ -98,7 +98,7 @@ public class RemoteConnectPanel extends JPanel {
 
         statusLabel = new JLabel(" ");
         statusLabel.setForeground(new Color(255, 150, 150));
-        gbc.gridy = 8;
+        gbc.gridy = 9;
         loginPanel.add(statusLabel, gbc);
 
         add(loginPanel, BorderLayout.CENTER);
@@ -174,25 +174,92 @@ public class RemoteConnectPanel extends JPanel {
     }
 
     private void doConnect() {
-        String host = hostField.getText().trim();
-        int port = Integer.parseInt(portField.getText().trim());
-        String user = userField.getText().trim();
-        String pass = new String(passField.getPassword());
-        String keyFile = keyFileField.getText().trim();
-        if (keyFile.isEmpty()) keyFile = null;
-
+        final String host = hostField.getText().trim();
+        final int port;
         try {
-            statusLabel.setText("正在连接 " + host + ":" + port + " ...");
-            statusLabel.setForeground(new Color(200, 200, 100));
-            ssh = new SSHClient(host, port, user, pass, keyFile);
-            ssh.connect();
-            connected = true;
-            statusLabel.setText("已连接到 " + user + "@" + host);
-            initConnectedUI(host, user);
-        } catch (Exception ex) {
-            statusLabel.setText("连接失败: " + ex.getMessage());
+            port = Integer.parseInt(portField.getText().trim());
+        } catch (NumberFormatException e) {
+            statusLabel.setText("端口号格式错误，请输入数字");
             statusLabel.setForeground(new Color(255, 100, 100));
+            return;
         }
+        final String user = userField.getText().trim();
+        final String pass = new String(passField.getPassword());
+        final String keyFile = keyFileField.getText().trim();
+
+        if (host.isEmpty()) {
+            statusLabel.setText("请输入主机IP地址");
+            statusLabel.setForeground(new Color(255, 100, 100));
+            return;
+        }
+        if (user.isEmpty()) {
+            statusLabel.setText("请输入用户名");
+            statusLabel.setForeground(new Color(255, 100, 100));
+            return;
+        }
+
+        // Disable connect button and show connecting status
+        for (Component c : getComponents()) {
+            if (c instanceof JPanel) {
+                for (Component cc : ((JPanel) c).getComponents()) {
+                    if (cc instanceof JButton && "连接".equals(((JButton) cc).getText())) {
+                        ((JButton) cc).setEnabled(false);
+                        ((JButton) cc).setText("连接中...");
+                    }
+                }
+            }
+        }
+        statusLabel.setText("正在连接 " + host + ":" + port + " ...（最多等待15秒）");
+        statusLabel.setForeground(new Color(200, 200, 100));
+
+        // Connect in background thread to avoid UI freeze
+        new Thread(() -> {
+            try {
+                ssh = new SSHClient(host, port, user, pass, keyFile.isEmpty() ? null : keyFile);
+                ssh.connect();
+                connected = true;
+                SwingUtilities.invokeLater(() -> {
+                    statusLabel.setText("✅ 已连接到 " + user + "@" + host);
+                    statusLabel.setForeground(new Color(100, 220, 100));
+                    initConnectedUI(host, user);
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    String errorMsg = ex.getMessage();
+                    if (errorMsg == null || errorMsg.isEmpty()) {
+                        errorMsg = ex.getClass().getSimpleName();
+                    }
+                    statusLabel.setText("❌ 连接失败: " + errorMsg);
+                    statusLabel.setForeground(new Color(255, 100, 100));
+                    // Re-enable connect button
+                    for (Component c : getComponents()) {
+                        if (c instanceof JPanel) {
+                            for (Component cc : ((JPanel) c).getComponents()) {
+                                if (cc instanceof JButton && "连接中...".equals(((JButton) cc).getText())) {
+                                    ((JButton) cc).setEnabled(true);
+                                    ((JButton) cc).setText("连接");
+                                }
+                            }
+                        }
+                    }
+                    // Show detailed error dialog
+                    JOptionPane.showMessageDialog(this,
+                        "SSH 连接失败！\n\n" +
+                        "错误信息: " + errorMsg + "\n\n" +
+                        "可能的原因:\n" +
+                        "1. 主机IP或端口错误\n" +
+                        "2. 目标机器未开启SSH服务\n" +
+                        "3. 防火墙阻止了22端口\n" +
+                        "4. 用户名或密码错误\n" +
+                        "5. 两台机器不在同一网络\n\n" +
+                        "排查方法:\n" +
+                        "- 命令行测试: ssh " + user + "@" + host + "\n" +
+                        "- 测试端口: telnet " + host + " " + port + "\n" +
+                        "- Windows目标机: 运行 一键开启OpenSSH.bat",
+                        "连接失败", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
     }
 
     private void initConnectedUI(String host, String user) {

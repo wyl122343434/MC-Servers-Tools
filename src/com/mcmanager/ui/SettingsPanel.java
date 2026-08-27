@@ -460,7 +460,7 @@ public class SettingsPanel extends JPanel {
             case 8:
                 JLabel about = new JLabel("<html><div style='font-size:13px;'>" +
                     "<b>MC-Servers-Tools</b><br><br>" +
-                    "版本: 3.9<br>" +
+                    "版本: 4.0<br>" +
                     "核心: Java Swing + SSH<br>" +
                     "支持: Windows / Linux / macOS / Android<br><br>" +
                     "<b>作者信息</b><br>" +
@@ -478,11 +478,13 @@ public class SettingsPanel extends JPanel {
                     "• 备份管理<br>" +
                     "• 自定义主题 & 背景图片<br>" +
                     "• 多语言支持<br><br>" +
-                    "<b>v3.9 更新说明</b><br>" +
-                    "• 新增系统工具页面<br>" +
-                    "• 一键开启 Windows OpenSSH（安装/启动/自启/防火墙）<br>" +
-                    "• 窗口标题中英文双语显示<br>" +
-                    "• SSH 连接故障排查提示<br><br>" +
+                    "<b>v4.0 更新说明</b><br>" +
+                    "• SSH 连接改后台线程，界面不卡死<br>" +
+                    "• 连接失败详细错误弹窗+排查方法<br>" +
+                    "• 连接超时改为15秒<br>" +
+                    "• 修复状态标签位置重叠问题<br>" +
+                    "• 一键开启OpenSSH独立脚本<br>" +
+                    "• 系统工具页面+OpenSSH一键配置<br><br>" +
                     "© 2026 MC-Servers-Tools" +
                     "</div></html>");
                 about.setForeground(tm.textPrimary());
