@@ -417,6 +417,21 @@ public class MainWindow extends JFrame {
         fileTable.setRowHeight(28);
         fileTable.getColumnModel().getColumn(1).setMaxWidth(80);
         fileTable.getColumnModel().getColumn(2).setMaxWidth(100);
+        // 双击进入文件夹
+        fileTable.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = fileTable.rowAtPoint(e.getPoint());
+                    if (row < 0) return;
+                    String name = String.valueOf(fileTableModel.getValueAt(row, 0));
+                    File target = new File(currentDir, name);
+                    if (target.isDirectory()) {
+                        currentDir = target.getAbsolutePath();
+                        refreshFileList();
+                    }
+                }
+            }
+        });
         // Custom renderer for name column with icons
         fileTable.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
@@ -434,14 +449,29 @@ public class MainWindow extends JFrame {
 
         JPanel fileOps = new JPanel(new FlowLayout(FlowLayout.LEFT));
         fileOps.setBackground(tm.bgPrimary());
+        JButton upBtn = new JButton("⬆ 上级");
+        upBtn.addActionListener(e -> {
+            File parent = new File(currentDir).getParentFile();
+            if (parent != null && parent.isDirectory()) {
+                currentDir = parent.getAbsolutePath();
+                refreshFileList();
+            }
+        });
         JButton uploadBtn = new JButton("上传");
+        uploadBtn.addActionListener(e -> uploadFile());
         JButton downloadBtn = new JButton("下载");
+        downloadBtn.addActionListener(e -> downloadFile());
         JButton deleteFileBtn = new JButton("删除");
+        deleteFileBtn.addActionListener(e -> deleteFile());
+        JButton newFolderBtn = new JButton("新建文件夹");
+        newFolderBtn.addActionListener(e -> createFolder());
         JButton refreshFileBtn = new JButton("刷新");
         refreshFileBtn.addActionListener(e -> refreshFileList());
+        fileOps.add(upBtn);
         fileOps.add(uploadBtn);
         fileOps.add(downloadBtn);
         fileOps.add(deleteFileBtn);
+        fileOps.add(newFolderBtn);
         fileOps.add(refreshFileBtn);
 
         panel.add(fileSplit, BorderLayout.CENTER);
@@ -772,6 +802,96 @@ public class MainWindow extends JFrame {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode(currentDir);
         buildTree(root, dir);
         fileTree.setModel(new DefaultTreeModel(root));
+    }
+
+    private void uploadFile() {
+        if (currentDir == null || currentDir.isEmpty()) return;
+        JFileChooser fc = new JFileChooser();
+        fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        fc.setDialogTitle("选择要上传的文件/文件夹");
+        if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File src = fc.getSelectedFile();
+        try {
+            File dest = new File(currentDir, src.getName());
+            copyFileRec(src, dest);
+            JOptionPane.showMessageDialog(this, "上传成功: " + src.getName());
+            refreshFileList();
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "上传失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void downloadFile() {
+        int row = fileTable.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "请先选中要下载的文件"); return; }
+        String name = String.valueOf(fileTableModel.getValueAt(row, 0));
+        File src = new File(currentDir, name);
+        if (!src.exists()) return;
+        JFileChooser fc = new JFileChooser();
+        fc.setSelectedFile(new File(name));
+        fc.setDialogTitle("保存到本地");
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        try {
+            File dest = fc.getSelectedFile();
+            if (src.isDirectory()) copyFileRec(src, dest);
+            else {
+                try (java.io.InputStream in = new java.io.FileInputStream(src);
+                     java.io.OutputStream out = new java.io.FileOutputStream(dest)) {
+                    byte[] buf = new byte[8192]; int n;
+                    while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                }
+            }
+            JOptionPane.showMessageDialog(this, "下载完成: " + name);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "下载失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void deleteFile() {
+        int row = fileTable.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "请先选中要删除的文件"); return; }
+        String name = String.valueOf(fileTableModel.getValueAt(row, 0));
+        File target = new File(currentDir, name);
+        if (JOptionPane.showConfirmDialog(this, "确定删除 \"" + name + "\" ?\n此操作不可恢复!",
+            "确认删除", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) return;
+        if (deleteRecursively(target)) {
+            JOptionPane.showMessageDialog(this, "已删除: " + name);
+            refreshFileList();
+        } else {
+            JOptionPane.showMessageDialog(this, "删除失败: " + name);
+        }
+    }
+
+    private void createFolder() {
+        String name = JOptionPane.showInputDialog(this, "输入新文件夹名称:");
+        if (name == null || name.trim().isEmpty()) return;
+        File dir = new File(currentDir, name.trim());
+        if (dir.exists()) { JOptionPane.showMessageDialog(this, "已存在同名文件/文件夹"); return; }
+        if (dir.mkdirs()) { refreshFileList(); JOptionPane.showMessageDialog(this, "已创建文件夹: " + name.trim()); }
+        else JOptionPane.showMessageDialog(this, "创建失败");
+    }
+
+    private void copyFileRec(File src, File dest) throws IOException {
+        if (src.isDirectory()) {
+            if (!dest.exists() && !dest.mkdirs()) throw new IOException("无法创建目录: " + dest);
+            File[] children = src.listFiles();
+            if (children != null) for (File c : children) copyFileRec(c, new File(dest, c.getName()));
+        } else {
+            try (java.io.InputStream in = new java.io.FileInputStream(src);
+                 java.io.OutputStream out = new java.io.FileOutputStream(dest)) {
+                byte[] buf = new byte[8192]; int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            }
+        }
+    }
+
+    private boolean deleteRecursively(File file) {
+        if (file == null) return true;
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) for (File c : children) if (!deleteRecursively(c)) return false;
+        }
+        return file.delete();
     }
 
     private String getFileIcon(String fileName) {
